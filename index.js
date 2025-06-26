@@ -43,5 +43,5 @@ app.post('/upload', upload.single('video'), async (req, res) => {
 
 app.listen(PORT, () => {
   console.log("Visit the following URL to authenticate with Google:");
-console.log(`https://shopify-upload-backend.onrender.com/auth`);
+console.log(`https://shopify-upload-backend-13ht.onrender.com/auth`);
 });
