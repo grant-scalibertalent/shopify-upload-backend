@@ -42,7 +42,6 @@ app.post('/upload', upload.single('video'), async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log('👉 Authenticate Google Drive at: http://localhost:5000/auth');
-  open(`http://localhost:${PORT}/auth`);
+  console.log("Visit the following URL to authenticate with Google:");
+console.log(`https://shopify-upload-backend.onrender.com/auth`);
 });
