@@ -55,5 +55,5 @@ app.post('/upload', upload.single('video'), async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server live at https://your-app.onrender.com`);
+  console.log(`Server live at https://shopify-upload-backend-13ht.onrender.com`);
 });
