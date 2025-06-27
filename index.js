@@ -10,7 +10,14 @@ const { getAuthUrl, setTokensFromCode, getAuthClient } = require('./auth');
 const sendToKlaviyo = require('./klaviyo');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://issdesigns.myshopify.com', // your live store
+    'http://127.0.0.1:9292',             // your local dev preview
+    'http://localhost:9292'             // sometimes Shopify uses localhost instead of 127.0.0.1
+  ],
+  methods: ['GET', 'POST'],
+}));
 app.use(express.json());
 const PORT = process.env.PORT || 5000;
 
