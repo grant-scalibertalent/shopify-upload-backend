@@ -17,6 +17,10 @@ const PORT = process.env.PORT || 5000;
 const upload = multer({ dest: 'uploads/' });
 const TOKEN_PATH = path.join(__dirname, 'token.json');
 
+app.get('/klaviyo-key', (req, res) => {
+  res.json({ key: process.env.KLAVIYO_PUBLIC_KEY });
+});
+
 // 🔄 Load token at startup
 if (fs.existsSync(TOKEN_PATH)) {
   try {
