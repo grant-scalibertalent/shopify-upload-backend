@@ -13,7 +13,7 @@ const app = express();
 app.use(cors({
   origin: [
     'https://issdesigns.myshopify.com', // your live store
-    'https://www.modernshelving.com/',
+    'https://www.modernshelving.com',
     'http://127.0.0.1:9292',             // your local dev preview
     'http://localhost:9292'             // sometimes Shopify uses localhost instead of 127.0.0.1
   ],
