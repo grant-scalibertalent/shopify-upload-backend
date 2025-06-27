@@ -7,17 +7,17 @@ const path = require('path');
 
 const uploadToDrive = require('./upload');
 const { getAuthUrl, setTokensFromCode, getAuthClient } = require('./auth');
+const sendToKlaviyo = require('./klaviyo');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 const PORT = process.env.PORT || 5000;
-const upload = multer({ dest: 'uploads/' });
 
+const upload = multer({ dest: 'uploads/' });
 const TOKEN_PATH = path.join(__dirname, 'token.json');
 
-// 🔄 Load token if exists on server start
+// 🔄 Load token at startup
 if (fs.existsSync(TOKEN_PATH)) {
   try {
     const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH));
@@ -29,13 +29,13 @@ if (fs.existsSync(TOKEN_PATH)) {
   }
 }
 
-// 🔐 Step 1: Start OAuth
+// 🔐 OAuth Step 1
 app.get('/auth', (req, res) => {
   const url = getAuthUrl();
   res.redirect(url);
 });
 
-// 🔐 Step 2: Handle callback from Google
+// 🔐 OAuth Step 2
 app.get('/oauth2callback', async (req, res) => {
   try {
     const code = req.query.code;
@@ -47,25 +47,49 @@ app.get('/oauth2callback', async (req, res) => {
   }
 });
 
-// 📤 Video Upload Endpoint
+// 📤 Upload + Klaviyo
 app.post('/upload', upload.single('video'), async (req, res) => {
   try {
+    const { name, email, story, videoUrl, permission } = req.body;
     const file = req.file;
-    if (!file) return res.status(400).send('No file uploaded');
+    const authClient = getAuthClient();
 
-    // Check for token before proceeding
-    const client = getAuthClient(); // Will throw error if token not set
-    const result = await uploadToDrive(file.path, file.originalname, client);
+    let finalVideoUrl = '';
+    let videoFileName = '';
 
-    res.json({ message: 'Upload successful', link: result.webViewLink });
+    if (file && file.size > 0) {
+      const result = await uploadToDrive(file.path, file.originalname, authClient);
+      finalVideoUrl = result.webViewLink;
+      videoFileName = file.originalname;
+    }
+
+    if (!finalVideoUrl && videoUrl) {
+      finalVideoUrl = videoUrl;
+    }
+
+    if (!finalVideoUrl) {
+      return res.status(400).json({ error: 'No video uploaded or URL provided' });
+    }
+
+    await sendToKlaviyo({
+      name,
+      email,
+      story,
+      videoUrl: finalVideoUrl,
+      videoFileName,
+      permission
+    });
+
+    res.json({ message: '✅ Submission received', link: finalVideoUrl });
+
   } catch (err) {
-    console.error(err);
+    console.error('❌ Upload failed:', err.message);
     res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });
 
-// 🖥️ Server start
+// 🚀 Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔗 Visit to authenticate: https://${process.env.RENDER_PROJECT_NAME || 'your-app-name'}.onrender.com/auth`);
+  console.log(`🔗 Authenticate at: https://${process.env.RENDER_PROJECT_NAME || 'your-app-name'}.onrender.com/auth`);
 });
