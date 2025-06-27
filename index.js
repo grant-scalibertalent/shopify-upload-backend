@@ -98,6 +98,33 @@ app.post('/upload', upload.single('video'), async (req, res) => {
     res.status(500).json({ error: 'Upload failed: ' + err.message });
   }
 });
+app.post('/track-klaviyo', async (req, res) => {
+  try {
+    const payload = {
+      token: process.env.KLAVIYO_PUBLIC_KEY,
+      event: req.body.event,
+      customer_properties: req.body.customer_properties,
+      properties: req.body.properties
+    };
+
+    const response = await fetch('https://a.klaviyo.com/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      return res.status(400).json({ error: result.message || 'Klaviyo error' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Klaviyo error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // 🚀 Start Server
 app.listen(PORT, () => {
