@@ -1,12 +1,16 @@
+// upload.js
 const { google } = require('googleapis');
 const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 /**
- * Uploads a video file to Google Drive
- * @param {string} filePath - Local file path
- * @param {string} originalName - Name to save on Drive
- * @param {object} authClient - Authenticated OAuth2 client
+ * Uploads a video file to Google Drive using the provided auth client.
+ *
+ * @param {string} filePath - The local path to the file.
+ * @param {string} originalName - The filename to assign in Google Drive.
+ * @param {object} authClient - A pre-authenticated OAuth2 client.
+ * @returns {Promise<object>} - Google Drive file info including webViewLink.
  */
 async function uploadToDrive(filePath, originalName, authClient) {
   if (!authClient) throw new Error('Missing Google OAuth client');
@@ -24,14 +28,26 @@ async function uploadToDrive(filePath, originalName, authClient) {
   };
 
   try {
-    const res = await drive.files.create({
+    const response = await drive.files.create({
       requestBody: fileMetadata,
       media,
       fields: 'id, webViewLink'
     });
 
-    console.log(`✅ Uploaded: ${originalName} → ${res.data.webViewLink}`);
-    return res.data;
+    const link = response.data.webViewLink;
+    console.log(`✅ Uploaded "${originalName}" → ${link}`);
+
+    // Optional: Clean up local file
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.warn(`⚠️ Failed to delete local file ${filePath}:`, err.message);
+      } else {
+        console.log(`🧹 Cleaned up local file: ${filePath}`);
+      }
+    });
+
+    return response.data;
+
   } catch (err) {
     console.error('❌ Google Drive upload failed:', err.message);
     throw err;
