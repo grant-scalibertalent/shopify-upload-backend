@@ -25,6 +25,53 @@ const getAuthUrl = () => {
     prompt: 'consent' // Optional: force refresh token if needed
   });
 };
+const { google } = require('googleapis');
+const { saveTokenToSupabase, loadTokenFromSupabase } = require('./tokenStore');
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SECRET,
+  process.env.REDIRECT_URI
+);
+
+(async () => {
+  const token = await loadTokenFromSupabase();
+  if (token) {
+    oauth2Client.setCredentials(token);
+    console.log('✅ Token loaded from Supabase');
+  } else {
+    console.log('⚠️ No token found — visit /auth');
+  }
+})();
+
+const getAuthUrl = () => {
+  const scopes = ['https://www.googleapis.com/auth/drive.file'];
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: scopes,
+    prompt: 'consent'
+  });
+};
+
+const setTokensFromCode = async (code) => {
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
+  await saveTokenToSupabase(tokens);
+  console.log('🔐 Token saved to Supabase');
+};
+
+const getAuthClient = () => {
+  if (oauth2Client.credentials?.access_token) {
+    return oauth2Client;
+  }
+  throw new Error("OAuth token not set.");
+};
+
+module.exports = {
+  getAuthUrl,
+  setTokensFromCode,
+  getAuthClient,
+};
 
 const setTokensFromCode = async (code) => {
   const { tokens } = await oauth2Client.getToken(code);
